@@ -29,7 +29,7 @@ class Scorer(ABC):
         return self.s0(p) if y == 0 else self.s1(p)
         
     def score_many(self,y,p,sensitive_features=[]):
-        scores_dict = {f : 0 for f in sensitive_features + ['all']}
+        scores_dict = {f : 0 for f in list(sensitive_features.unique()) + ['all']}
         n = len(y)
         for i in range(n):
             score = self.score(y[i],p[i])
@@ -56,7 +56,6 @@ class Scorer(ABC):
                     rho * (self.s1(rho) + \
                     (1-rho)) * (self.s0(rho))
             )
-            print(calibration_component, refinement_component)
         return calibration_component, refinement_component
     
 class BetaScorer(Scorer):
