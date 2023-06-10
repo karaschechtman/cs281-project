@@ -36,7 +36,12 @@ class Scorer(ABC):
             scores_dict['all']+= score
             if len(sensitive_features):
                 scores_dict[sensitive_features[i]]+=score
-        return { key : scores_dict[key]/n for key in scores_dict.keys() }
+        
+        # Normalize scores
+        scores_dict['all'] = scores_dict['all']/n
+        for f in sensitive_features.unique():
+            scores_dict[f] = scores_dict[f]/len(sensitive_features[sensitive_features==f])
+        return  scores_dict
 
     def score_components(self,y,p,round_to=None):
         if round_to != None:
@@ -47,7 +52,6 @@ class Scorer(ABC):
         for x in p.unique():
             nu = len(p[p==x])/len(p)
             rho = len(p[(p==x) & (y==1)])/len(p[p==x])
-            print(nu,rho)
             calibration_component += nu * (
                 rho * (self.s1(x) - self.s1(rho)) - \
                 (1-rho) * (self.s0(x)-self.s0(rho))
