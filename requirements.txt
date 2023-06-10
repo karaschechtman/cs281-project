@@ -1,8 +1,6 @@
-fairlearn
 jupyter
 matplotlib
 numpy
 pandas
 POT
-tempeh
 sympy
