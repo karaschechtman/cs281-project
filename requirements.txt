@@ -1,6 +1,9 @@
+altair
 jupyter
+latextable
 matplotlib
 numpy
 pandas
 POT
 sympy
+texttable
