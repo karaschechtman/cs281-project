@@ -24,6 +24,34 @@ def predict_calibrated(X_train,y_train,X_test):
     calibrated_estimator.fit(X_train,y_train)
     return [s[1] for s in calibrated_estimator.predict_proba(X_test)]
 
+def predict_calibrated_split_race(X_train,y_train,X_test,race_train,race_test):
+    # Split data and train the uncalibrated estimator
+    estimator = LogisticRegression(solver="liblinear")
+    X_train, X_calibrate, y_train, y_calibrate = train_test_split(X_train,y_train,test_size=0.15,random_state=SEED)
+    estimator.fit(X_train,y_train)
+
+    # Split the calibration train data by race
+    X_b_calibrate, y_b_calibrate = X_calibrate[race_train=='African-American'], y_calibrate[race_train=='African-American']
+    X_c_calibrate, y_c_calibrate = X_calibrate[race_train=='Caucasian'], y_calibrate[race_train=='Caucasian']
+
+    # Calibrate a predictor for each race
+    b_calibrated_estimator = CalibratedClassifierCV(estimator,method='sigmoid',cv='prefit')
+    c_calibrated_estimator = CalibratedClassifierCV(estimator,method='sigmoid',cv='prefit')
+    b_calibrated_estimator.fit(X_b_calibrate,y_b_calibrate)
+    c_calibrated_estimator.fit(X_c_calibrate,y_c_calibrate)
+
+    # Get predictions and merge
+    b_estimates = [s[1] for s in b_calibrated_estimator.predict_proba(X_test)]
+    c_estimates = [s[1] for s in c_calibrated_estimator.predict_proba(X_test)]
+    race_test = list(race_test)
+    race_calibrated_estimates = []
+    for i in range(len(race_test)):
+        if race_test[i] == 'African-American':
+            race_calibrated_estimates.append(b_estimates[i]) 
+        else:
+            race_calibrated_estimates.append(c_estimates[i]) 
+    return race_calibrated_estimates
+
 def predict_EO_thresholdless(X_train,y_train,X_test,y_test,sensitive_features):
     df = X_test.copy()
     df['unconstrained'] = predict_unconstrained(X_train,y_train,X_test)
@@ -74,6 +102,7 @@ if __name__ == '__main__':
     df = X_test.copy()
     df['unconstrained'] = predict_unconstrained(X_train,y_train,X_test)
     df['calibrated'] = predict_calibrated(X_train,y_train,X_test)
+    df['calibrated_race'] = predict_calibrated_split_race(X_train,y_train,X_test,race_train,race_test)
     df['thresholdless_EO'] = predict_EO_thresholdless(X_train,y_train,X_test,
                                                       y_test,race_test)
     df['two_year_recid'] = y_test
