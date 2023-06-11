@@ -17,7 +17,7 @@ def predict_unconstrained(X_train,y_train,X_test):
     estimator.fit(X_train, y_train)
     return [s[1] for s in estimator.predict_proba(X_test)]
 
-def predict_calibrated(X_train,y_train,X_test,sensitive_features):
+def predict_calibrated(X_train,y_train,X_test):
     # TODO(kara): break apart by sensitive features
     estimator = LogisticRegression(solver="liblinear")
     calibrated_estimator = CalibratedClassifierCV(estimator,method='sigmoid',cv=2)

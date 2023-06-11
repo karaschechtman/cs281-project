@@ -44,6 +44,7 @@ class Scorer(ABC):
         return  scores_dict
 
     def score_components(self,y,p,round_to=None):
+        #todo redo assessment with deciles
         if round_to != None:
             p = p.apply(round,args=[round_to])
         # Return scores segmented into components representing calibration and refinement
@@ -86,13 +87,13 @@ class WeightedLogScorer(Scorer):
 
     def s0(self,p):
         try:
-            return -1**self.a*math.log(p)**self.a
+            return (-1**self.a)*(math.log(1-p)**self.a)
         except:
             return float('inf')
 
     def s1(self,p):
         try:
-            return -1**self.b*math.log(1-p)**self.b
+            return (-1**self.b)*(math.log(p)**self.b)
         except:
             return float('inf') 
         

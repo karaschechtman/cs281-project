@@ -1,6 +1,7 @@
 import numpy as np
 
 def get_sufficiency_gap(y,p,races,round_to=1):
+    #todo redo assessment with deciles
     if round_to != None:
         p = p.apply(round,args=[round_to])
     sufficiency_gaps = {f : 0 for f in list(races.unique())}
