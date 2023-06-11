@@ -55,6 +55,11 @@ def predict_EO_thresholdless(X_train,y_train,X_test,y_test,sensitive_features):
     
     return df['thresholdless_EO']
 
+def _EO_class(row,label):
+    if row['two_year_recid']==label:
+        return row['thresholdless_EO']
+    return row['unconstrained']
+
 if __name__ == '__main__':
     dataset = pd.read_csv(DATASET_FILENAME)
     targets = dataset['two_year_recid']
@@ -68,9 +73,11 @@ if __name__ == '__main__':
     X_test = pd.get_dummies(X_test.drop(['race','sex'],axis=1))
     df = X_test.copy()
     df['unconstrained'] = predict_unconstrained(X_train,y_train,X_test)
-    df['calibrated'] = predict_calibrated(X_train,y_train,X_test,race_test)
+    df['calibrated'] = predict_calibrated(X_train,y_train,X_test)
     df['thresholdless_EO'] = predict_EO_thresholdless(X_train,y_train,X_test,
                                                       y_test,race_test)
-    df['race'] = race_test
     df['two_year_recid'] = y_test
+    df['thresholdless_EO_pos_class'] = df.apply(_EO_class,args=[1],axis=1)
+    df['thresholdless_EO_neg_class'] = df.apply(_EO_class,args=[0],axis=1)
+    df['race'] = race_test
     df.to_csv(PREDICTIONS_FILENAME,index=False)
