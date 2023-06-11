@@ -57,8 +57,8 @@ def predict_EO_thresholdless(X_train,y_train,X_test,y_test,sensitive_features):
 
 if __name__ == '__main__':
     dataset = pd.read_csv(DATASET_FILENAME)
-    targets = dataset['is_recid']
-    dataset = dataset.drop('is_recid',axis=1)
+    targets = dataset['two_year_recid']
+    dataset = dataset.drop('two_year_recid',axis=1)
     X_train, X_test, y_train, y_test = train_test_split(dataset, targets, 
                                                        test_size=TEST_SIZE, 
                                                        random_state=SEED)
@@ -72,5 +72,5 @@ if __name__ == '__main__':
     df['thresholdless_EO'] = predict_EO_thresholdless(X_train,y_train,X_test,
                                                       y_test,race_test)
     df['race'] = race_test
-    df['is_recid'] = y_test
+    df['two_year_recid'] = y_test
     df.to_csv(PREDICTIONS_FILENAME,index=False)
