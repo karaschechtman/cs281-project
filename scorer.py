@@ -21,8 +21,12 @@ class Scorer(ABC):
         x = np.linspace(0,1,200)
         s0 = np.vectorize(self.s0)(x)
         s1 = np.vectorize(self.s1)(x)
-        plt.plot(x, s0, 'r')
-        plt.plot(x, s1, 'b')
+        plt.xlabel('Probability')
+        plt.ylabel('Score')
+        plt.title(self.title)
+        plt.plot(x, s0, 'mediumorchid',label='s0')
+        plt.plot(x, s1, 'mediumseagreen',label='s1')
+        plt.legend(loc='upper right')
         plt.show()
 
     def score(self,y,p):
@@ -63,10 +67,12 @@ class Scorer(ABC):
             )
         return calibration_component, refinement_component
     
+# TODO(kara): reimplement using the scipy beta function, I think it will be better/faster
 class BetaScorer(Scorer):
     def __init__(self,alpha,beta):
         self.alpha = alpha
         self.beta = beta
+        self.title = "Beta Scorer (α = %d, β=%d)"
         t = Symbol('t')
         self._s0 = lambdify(t,integrate((t**self.alpha)*((1-t)**(self.beta-1)),t))
         s1_helper = integrate(t**(self.alpha-1)*(1-t)**self.beta,t)
@@ -79,32 +85,43 @@ class BetaScorer(Scorer):
     def s1(self,p):
         return self._s1(p)
 
-class WeightedLogScorer(Scorer):
-    def __init__(self,a=1,b=1):
-        self.a = a
-        self.b = b
+class LogScorer(Scorer):
+    def __init__(self):
         super().__init__()
+        self.title = "Log Score"
 
     def s0(self,p):
         try:
-            return (-1**self.a)*(math.log(1-p)**self.a)
-        except:
+            return -math.log(1-p)
+        except ValueError:
             return float('inf')
 
     def s1(self,p):
         try:
-            return (-1**self.b)*(math.log(p)**self.b)
-        except:
-            return float('inf') 
-        
-class WeightedBrierScorer(Scorer):
-    def __init__(self,a=2,b=2):
-        self.a = a
-        self.b = b
+            return -math.log(p)
+        except ValueError:
+            return float('inf')
+
+class BrierScorer(Scorer):
+    def __init__(self):
         super().__init__()
+        self.title = "Brier Score"
 
     def s0(self,p):
-        return p**self.a
+        return (1-p)**2
 
     def s1(self,p):
-        return (1-p)**self.b
+        return p**2
+    
+class CustomScorer(Scorer):
+    def __init__(self,s0,s1,title):
+        super().__init__()
+        self._s0 = s0
+        self._s1 = s1
+        self.title = title
+    
+    def s0(self,p):
+        return self._s0(p)
+
+    def s1(self,p):
+        return self._s1(p)

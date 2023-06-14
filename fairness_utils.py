@@ -1,16 +1,17 @@
 import numpy as np
+import pandas as pd
 
-def get_sufficiency_gap(y,p,races,round_to=1):
+def get_sufficiency_gap_quantiles(y,p,races,buckets=500):
     #todo redo assessment with deciles
-    if round_to != None:
-        p = p.apply(round,args=[round_to])
     sufficiency_gaps = {f : 0 for f in list(races.unique())}
+    bins = pd.qcut(p,q=buckets,duplicates='drop')
     for race in races.unique():
         sufficiency_gap = 0
-        for score in p[races==race].unique(): # prevent nan
-            weight = len(p[p==score])/len(p)
-            sufficiency_gap += weight * (np.mean(y[p==score]) 
-                                         - np.mean(y[(p==score) & (races==race)]))
+        for q in bins.unique():
+            if len(p[(races==race) & (bins==q)]):
+                weight = len(bins[bins==q])/len(bins)
+                race_weight =  len(bins[(bins==q) & (races==race)])/len(bins)
+                sufficiency_gap += weight * (np.mean(y[bins==q])) - race_weight*(np.mean(y[(bins==q) & (races==race)]))
         sufficiency_gaps[race] = sufficiency_gap
     return sufficiency_gaps
 
