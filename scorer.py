@@ -4,6 +4,7 @@ from sympy import *
 import matplotlib.pyplot as plt
 import math 
 import numpy as np
+import pandas as pd
 
 class Scorer(ABC):
     def __init__(self):
@@ -47,24 +48,28 @@ class Scorer(ABC):
             scores_dict[f] = scores_dict[f]/len(sensitive_features[sensitive_features==f])
         return  scores_dict
 
-    def score_components(self,y,p,round_to=None):
-        #todo redo assessment with deciles
-        if round_to != None:
-            p = p.apply(round,args=[round_to])
-        # Return scores segmented into components representing calibration and refinement
+    def score_components(self,y,p,buckets=50):
         calibration_component = refinement_component = 0
-    
-        for x in p.unique():
-            nu = len(p[p==x])/len(p)
-            rho = len(p[(p==x) & (y==1)])/len(p[p==x])
-            calibration_component += nu * (
-                rho * (self.s1(x) - self.s1(rho)) - \
-                (1-rho) * (self.s0(x)-self.s0(rho))
-            )
-            refinement_component +=  nu * (
-                    rho * (self.s1(rho) + \
-                    (1-rho)) * (self.s0(rho))
-            )
+        bins = pd.qcut(p,q=buckets,duplicates='drop')
+        bins = bins.rename('bins')
+        p = p.rename('score')
+        bin_means = pd.concat([p,bins],axis=1).groupby('bins').agg(np.mean).reset_index()
+        bins = bins.astype('string')
+        bin_means['bins'] = bin_means['bins'].astype('string')
+        for _, row in bin_means.iterrows():
+            x = row['score']
+            cat = row['bins']
+            if cat in bins.unique():
+                nu = len(p[bins==cat])/len(p)
+                rho = len(p[(bins==cat) & (y==1)])/len(p[bins==cat])
+                calibration_component += nu * (
+                    rho * (self.s1(x) - self.s1(rho)) - \
+                    (1-rho) * (self.s0(x)-self.s0(rho))
+                )
+                refinement_component +=  nu * (
+                        rho * (self.s1(rho) + \
+                        (1-rho)) * (self.s0(rho))
+                )
         return calibration_component, refinement_component
     
 # TODO(kara): reimplement using the scipy beta function, I think it will be better/faster
@@ -108,10 +113,10 @@ class BrierScorer(Scorer):
         self.title = "Brier Score"
 
     def s0(self,p):
-        return (1-p)**2
+        return p**2
 
     def s1(self,p):
-        return p**2
+        return (1-p)**2
     
 class CustomScorer(Scorer):
     def __init__(self,s0,s1,title):
